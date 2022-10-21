@@ -1,6 +1,35 @@
 #include "microshell.h"
 #include <stdio.h>
 
+
+void exit_fatal(void)
+{
+	write(2, "error: fatal\n", ft_strlen("error: fatal\n"));
+	exit(EXIT_FAILURE);
+}
+
+void exit_execve(char *str)
+{
+	write(2, "error: cannot execute ", ft_strlen("error: cannot execute "));
+	write(2, str, ft_strlen(str));
+	write(2, "\n", 1);
+	exit(EXIT_FAILURE);
+}
+
+int exit_cd_1(void)
+{
+	write(2, "error: cd: bad arguments\n", ft_strlen("error: cd: bad arguments\n"));
+	return (EXIT_FAILURE);
+}
+
+int exit_cd_2(char *str)
+{
+	write(2, "error: cd: cannot change directory to ", ft_strlen("error: cd: cannot change directory to "));
+	write(2, str, ft_strlen(str));
+	write(2, "\n", 1);
+	return (EXIT_FAILURE);
+}
+
 int ft_strlen(char *str) {
     int i = 0;
 
@@ -65,13 +94,14 @@ void    ft_exequtor(t_list *list, char **envp) {
 
     pid = fork();
     if (pid < 0)
-        exit(0);
+        exit_fatal();
     else if (pid == 0) {
         if (list->type == 1 && (dup2(list->pipes[1], 1)) < 0)
-            return;
+            exit_fatal();
         if (list->prev && list->prev->type == 1 && (dup2(list->prev->pipes[0], 0)) < 0)
-            return;
+            exit_fatal();
         execve(list->strs[0], list->strs, envp);
+        exit_execve(list->strs[0]);
     }
     else {
         waitpid(pid, NULL, 0);
@@ -107,14 +137,10 @@ int main(int argc, char **argv, char **envp) {
     }
     while (main_struct->exe != NULL) {
         if (strcmp(main_struct->exe->strs[0], "cd") == 0) {
-            if (main_struct->exe->strs[1] == NULL || main_struct->exe->strs[2]) {
-                printf("bad cd1\n");
-                return(1);
-            }
-            if (chdir(main_struct->exe->strs[1]) != 0) {
-                printf("bad cd2");
-                return (2);
-            }
+            if (main_struct->exe->strs[1] == NULL || main_struct->exe->strs[2])
+                exit_cd_1();
+            if (chdir(main_struct->exe->strs[1]) != 0)
+                exit_cd_2(main_struct->exe->strs[1]);
         }
         else {
             ft_exequtor(main_struct->exe, envp);

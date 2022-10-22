@@ -92,6 +92,9 @@ void    ft_push_back(t_list **list, t_list *new) {
 void    ft_exequtor(t_list *list, char **envp) {
     pid_t   pid;
 
+    if (list->type == 1 || (list->prev && list->prev->type == 1))
+        if (pipe(list->pipes))
+            exit_fatal();
     pid = fork();
     if (pid < 0)
         exit_fatal();

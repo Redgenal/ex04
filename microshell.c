@@ -1,6 +1,13 @@
 #include "microshell.h"
 #include <stdio.h>
 
+int ft_strlen(char *str) {
+    int i = 0;
+
+    while (str[i] != '\0')
+        i++;
+    return (i);
+}
 
 void exit_fatal(void)
 {
@@ -28,14 +35,6 @@ int exit_cd_2(char *str)
 	write(2, str, ft_strlen(str));
 	write(2, "\n", 1);
 	return (EXIT_FAILURE);
-}
-
-int ft_strlen(char *str) {
-    int i = 0;
-
-    while (str[i] != '\0')
-        i++;
-    return (i);
 }
 
 char    *ft_strdup(char *str) {
@@ -118,6 +117,22 @@ void    ft_exequtor(t_list *list, char **envp) {
     }
 }
 
+void    ft_clean_all(t_main *main_struct) {
+    int i = -1;
+    t_list  *tmp;
+
+    while(main_struct->first) {
+        i = -1;
+        tmp = main_struct->first->next;
+        while(main_struct->first->strs[++i])
+            free(main_struct->first->strs[i]);
+        free(main_struct->first->strs);
+        free(main_struct->first);
+        main_struct->first = tmp;
+    }
+    free(main_struct);
+}
+
 int main(int argc, char **argv, char **envp) {
     t_main  *main_struct;
     int i = 1;
@@ -132,12 +147,13 @@ int main(int argc, char **argv, char **envp) {
     main_struct->exe = NULL;
     while (i < argc) {
         start = i;
-        while(argv[i] && argv[i][0] != '|' && argv[i][0] != ';') {
+        while(argv[i] && (strcmp(argv[i], "|") != 0) && (strcmp(argv[i], ";") != 0)) {
             i++;
         }
         ft_push_back(&main_struct->exe, ft_create_list(argv, start, i - start));
         i++;
     }
+    main_struct->first = main_struct->exe;
     while (main_struct->exe != NULL) {
         if (strcmp(main_struct->exe->strs[0], "cd") == 0) {
             if (main_struct->exe->strs[1] == NULL || main_struct->exe->strs[2])
@@ -150,5 +166,6 @@ int main(int argc, char **argv, char **envp) {
         }
         main_struct->exe = main_struct->exe->next;
     }
+    ft_clean_all(main_struct);
     return (0);
 }
